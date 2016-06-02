@@ -28,8 +28,8 @@ JavaBuildpack::Buildpack.with_buildpack(build_dir, 'Compile failed with exceptio
 end
 
 
-BUILD_DIR=ARGV[1]
-CACHE_DIR=ARGV[1]
+BUILD_DIR=ARGV[0]
+CACHE_DIR=/tmp
 
 BIN_PATH="$BUILD_DIR/bin"
 TMP_PATH="$BUILD_DIR/tmp"
