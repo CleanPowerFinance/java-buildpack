@@ -4,7 +4,7 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 
 BIN_RUBY=$(which ruby)
-cat <<EOF > /tmp/compile.rb
+cat <<'EOF' > /tmp/compile.rb
 #!/usr/bin/env ruby
 $stdout.sync = true
 $stderr.sync = true
