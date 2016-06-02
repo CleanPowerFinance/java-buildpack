@@ -14,25 +14,25 @@ end
 
 cache_dir = ARGV[1]
 
-bin_path="${build_dir}/bin"
-tmp_path="${build_dir}/tmp"
+bin_path="#{build_dir}/bin"
+tmp_path="#{build_dir}/tmp"
 
-FileUtils.mkdir_p "${cache_dir}"
-FileUtils.mkdir_p "${bin_path}"
-FileUtils.mkdir_p "${tmp_path}"
+FileUtils.mkdir_p "#{cache_dir}"
+FileUtils.mkdir_p "#{bin_path}"
+FileUtils.mkdir_p "#{tmp_path}"
 
-wkhtml_pkg="${cache_Dir}/wkhtmltopdf.deb"
-wkhtmltopdf_path="${tmp_path}/wkhtmltopdf"
-wkhtmltopdf_binaries="${wkhtmltopdf_path}/usr/local/bin"
+wkhtml_pkg="#{cache_Dir}/wkhtmltopdf.deb"
+wkhtmltopdf_path="#{tmp_path}/wkhtmltopdf"
+wkhtmltopdf_binaries="#{wkhtmltopdf_path}/usr/local/bin"
 
-File.open("${wkhtml_pkg}", "wb") do |saved_file|
+File.open("#{wkhtml_pkg}", "wb") do |saved_file|
   open("http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb", "rb") do |read_file|
     saved_file.write(read_file.read)
   end
 end
 
-%x[" dpkg -x ${wkhtml_pkg} ${wkhtmltopdf_path}" ]
+%x[ dpkg -x #{wkhtml_pkg} ${wkhtmltopdf_path} ]
 
-%x[" chmod +x ${wkhtmltopdf_binaries}/* "]
+%x[ chmod +x #{wkhtmltopdf_binaries}/* ]
 
-%x[" mv $wkhtmltopdf_binaries/* $bin_path/ "]
+%x[ mv #{wkhtmltopdf_binaries}/* #{bin_path}/ ]
