@@ -31,8 +31,8 @@ File.open("${wkhtml_pkg}", "wb") do |saved_file|
   end
 end
 
-%x[ dpkg -x ${wkhtml_pkg} ${wkhtmltopdf_path}]
+%x[" dpkg -x ${wkhtml_pkg} ${wkhtmltopdf_path}" ]
 
-%x[ chmod +x ${wkhtmltopdf_binaries}/*]
+%x[" chmod +x ${wkhtmltopdf_binaries}/* "]
 
-%x[ mv $wkhtmltopdf_binaries/* $bin_path/ ]
+%x[" mv $wkhtmltopdf_binaries/* $bin_path/ "]
