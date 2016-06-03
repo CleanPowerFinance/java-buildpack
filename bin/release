@@ -28,3 +28,4 @@ output = JavaBuildpack::Buildpack.with_buildpack(build_dir, 'Release failed with
 end
 
 puts output
+puts "PATH=~/app/bin:$PATH"
