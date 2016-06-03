@@ -43,6 +43,7 @@ module JavaBuildpack
         @droplet.additional_libraries.insert 0, @application.root
         manifest_class_path.each { |path| @droplet.additional_libraries << path }
         @droplet.environment_variables.add_environment_variable 'SERVER_PORT', '$PORT' if boot_launcher?
+        @droplet.environment_variables.add_environment_variable 'PATH', "/home/vcap/app/bin:$PATH"
 
         release_text
       end
