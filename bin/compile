@@ -39,7 +39,7 @@ wkhtmltopdf_path="#{tmp_path}/wkhtmltopdf"
 wkhtmltopdf_binaries="#{wkhtmltopdf_path}/usr/local/bin"
 
 File.open("#{wkhtml_pkg}", "wb") do |saved_file|
-  open("http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb", "rb") do |read_file|
+    open("https://downloads.wkhtmltopdf.org/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb", "rb") do |read_file|
     saved_file.write(read_file.read)
   end
 end
