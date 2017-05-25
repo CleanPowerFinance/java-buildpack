@@ -1,6 +1,5 @@
-# Encoding: utf-8
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2017 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,9 +19,11 @@ require 'java_buildpack/component/additional_libraries'
 require 'java_buildpack/component/application'
 require 'java_buildpack/component/droplet'
 require 'java_buildpack/component/environment_variables'
+require 'java_buildpack/component/extension_directories'
 require 'java_buildpack/component/immutable_java_home'
 require 'java_buildpack/component/java_opts'
 require 'java_buildpack/component/mutable_java_home'
+require 'java_buildpack/component/security_providers'
 require 'java_buildpack/logging/logger_factory'
 require 'java_buildpack/util/configuration_utils'
 require 'java_buildpack/util/constantize'
@@ -59,9 +60,11 @@ module JavaBuildpack
 
       container = component_detection('container', @containers, true).first
       no_container unless container
+      jre        = component_detection('JRE', @jres, true).first
+      frameworks = component_detection('framework', @frameworks, false)
 
-      component_detection('JRE', @jres, true).first.compile
-      component_detection('framework', @frameworks, false).each(&:compile)
+      frameworks.each(&:compile)
+      jre.compile
       container.compile
     end
 
@@ -72,16 +75,21 @@ module JavaBuildpack
     def release
       container = component_detection('container', @containers, true).first
       no_container unless container
+      jre        = component_detection('JRE', @jres, true).first
+      frameworks = component_detection('framework', @frameworks, false)
+
+      frameworks.map(&:release)
 
       commands = []
-      commands << component_detection('JRE', @jres, true).first.release
-      component_detection('framework', @frameworks, false).map(&:release)
+      commands << jre.release
       commands << container.release
+
+      command = commands.flatten.compact.join(' && ')
 
       payload = {
         'addons'                => [],
         'config_vars'           => {},
-        'default_process_types' => { 'web' => commands.flatten.compact.join(' && ') }
+        'default_process_types' => { 'web' => command, 'task' => command }
       }.to_yaml
 
       @logger.debug { "Release Payload:\n#{payload}" }
@@ -110,11 +118,13 @@ module JavaBuildpack
       immutable_java_home = Component::ImmutableJavaHome.new mutable_java_home, app_dir
 
       component_info = {
-        'additional_libraries' => Component::AdditionalLibraries.new(app_dir),
-        'application'          => application,
-        'env_vars'             => Component::EnvironmentVariables.new(app_dir),
-        'java_opts'            => Component::JavaOpts.new(app_dir),
-        'app_dir'              => app_dir
+        'additional_libraries'  => Component::AdditionalLibraries.new(app_dir),
+        'app_dir'               => app_dir,
+        'application'           => application,
+        'env_vars'              => Component::EnvironmentVariables.new(app_dir),
+        'extension_directories' => Component::ExtensionDirectories.new(app_dir),
+        'java_opts'             => Component::JavaOpts.new(app_dir),
+        'security_providers'    => Component::SecurityProviders.new
       }
 
       instantiate_components(mutable_java_home, immutable_java_home, component_info)
@@ -146,7 +156,7 @@ module JavaBuildpack
         tags << result
       end
 
-      fail "Application can be run by more than one #{type}: #{names detected}" if unique && detected.size > 1
+      raise "Application can be run by more than one #{type}: #{names detected}" if unique && detected.size > 1
       [detected, tags]
     end
 
@@ -162,8 +172,9 @@ module JavaBuildpack
           application:   component_info['application'],
           configuration: Util::ConfigurationUtils.load(component_id),
           droplet:       Component::Droplet.new(component_info['additional_libraries'], component_id,
-                                                component_info['env_vars'], java_home,
-                                                component_info['java_opts'], component_info['app_dir'])
+                                                component_info['env_vars'], component_info['extension_directories'],
+                                                java_home, component_info['java_opts'], component_info['app_dir'],
+                                                component_info['security_providers'])
         }
         component.constantize.new(context)
       end
@@ -187,9 +198,9 @@ module JavaBuildpack
     end
 
     def no_container
-      fail 'No container can run this application. Please ensure that you’ve pushed a valid JVM artifact or ' \
-           'artifacts using the -p command line argument or path manifest entry. Information about valid JVM ' \
-           'artifacts can be found at https://github.com/cloudfoundry/java-buildpack#additional-documentation. '
+      raise 'No container can run this application. Please ensure that you\'ve pushed a valid JVM artifact or ' \
+            'artifacts using the -p command line argument or path manifest entry. Information about valid JVM ' \
+            'artifacts can be found at https://github.com/cloudfoundry/java-buildpack#additional-documentation. '
     end
 
     def require_component(component)
@@ -218,7 +229,7 @@ module JavaBuildpack
       # @yield [Buildpack] the buildpack to work with
       # @return [Object] the return value from the given block
       def with_buildpack(app_dir, message)
-        app_dir     = Pathname.new(File.expand_path(app_dir))
+        app_dir = Pathname.new(File.expand_path(app_dir))
         Logging::LoggerFactory.instance.setup app_dir
         application = Component::Application.new(app_dir)
 
